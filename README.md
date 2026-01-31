@@ -15,7 +15,7 @@ Mark Cheli's cross-platform dotfiles setup with automated installation for macOS
 ### Local Installation
 
 ```bash
-git clone https://github.com/mcheli/dotfiles.git ~/dotfiles
+git clone https://github.com/MCheli/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./scripts/setup.sh
 ```
@@ -23,13 +23,13 @@ cd ~/dotfiles
 ### Remote Server (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
 or
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
+wget -qO- https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
 ## What's Included

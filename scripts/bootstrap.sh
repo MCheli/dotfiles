@@ -1,11 +1,11 @@
 #!/bin/bash
 # One-liner bootstrap for remote servers
-# Usage: curl -fsSL https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
-#    or: wget -qO- https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstrap.sh | bash
+#    or: wget -qO- https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstrap.sh | bash
 
 set -e
 
-REPO_URL="${DOTFILES_REPO:-https://github.com/mcheli/dotfiles.git}"
+REPO_URL="${DOTFILES_REPO:-https://github.com/MCheli/dotfiles.git}"
 DOTFILES_DIR="$HOME/dotfiles"
 
 echo "=== Dotfiles Bootstrap ==="
