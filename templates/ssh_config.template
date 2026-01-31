@@ -1,0 +1,84 @@
+# SSH Client Configuration
+# Place this file at ~/.ssh/config
+
+# ===== Global Defaults =====
+Host *
+    # Security settings
+    Protocol 2
+    HashKnownHosts yes
+    VisualHostKey yes
+    PasswordAuthentication no
+    ChallengeResponseAuthentication no
+    StrictHostKeyChecking ask
+    VerifyHostKeyDNS yes
+    ForwardAgent no
+    ForwardX11 no
+    ForwardX11Trusted no
+    ServerAliveInterval 300
+    ServerAliveCountMax 2
+    Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+    MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
+    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
+    HostKeyAlgorithms ssh-ed25519-cert-v01@openssh.com,ssh-rsa-cert-v01@openssh.com,ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,ecdsa-sha2-nistp256
+
+    # Convenience settings
+    Compression yes
+    ControlMaster auto
+    ControlPath ~/.ssh/master-%r@%h:%p
+    ControlPersist 10m
+
+# ===== Example Host Configurations =====
+# Uncomment and modify as needed
+
+# Personal server example
+# Host myserver
+#     HostName example.com
+#     User myusername
+#     Port 22
+#     IdentityFile ~/.ssh/id_ed25519
+#     ForwardAgent yes
+
+# Development server example
+# Host dev
+#     HostName dev.example.com
+#     User developer
+#     Port 2222
+#     IdentityFile ~/.ssh/id_rsa_dev
+
+# Jump host example
+# Host jumphost
+#     HostName jump.example.com
+#     User admin
+#     IdentityFile ~/.ssh/id_ed25519
+#
+# Host internal-server
+#     HostName 192.168.1.100
+#     User developer
+#     ProxyJump jumphost
+
+# GitHub (for reference)
+# Host github.com
+#     HostName github.com
+#     User git
+#     IdentityFile ~/.ssh/id_ed25519_github
+#     IdentitiesOnly yes
+
+# GitLab (for reference)
+# Host gitlab.com
+#     HostName gitlab.com
+#     User git
+#     IdentityFile ~/.ssh/id_ed25519_gitlab
+#     IdentitiesOnly yes
+
+# ===== Local Network Shortcut =====
+# Host 192.168.1.*
+#     StrictHostKeyChecking no
+#     UserKnownHostsFile /dev/null
+#     LogLevel QUIET
+
+# ===== Notes =====
+# 1. Always use key-based authentication, disable password auth
+# 2. Use Ed25519 keys when possible: ssh-keygen -t ed25519 -C "email@example.com"
+# 3. For older systems that don't support Ed25519, use RSA 4096: ssh-keygen -t rsa -b 4096 -C "email@example.com"
+# 4. Keep different keys for different services/purposes
+# 5. Use ssh-agent for key management: ssh-add ~/.ssh/id_ed25519

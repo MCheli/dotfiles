@@ -215,11 +215,39 @@ print_instructions() {
     echo ""
 }
 
+# Setup additional configurations
+setup_configs() {
+    echo "Setting up additional configurations..."
+
+    # Git configuration
+    if [[ -f "$DOTFILES_DIR/config/git/setup.sh" ]]; then
+        echo "Setting up Git configuration..."
+        bash "$DOTFILES_DIR/config/git/setup.sh"
+    fi
+
+    # Vim configuration
+    if [[ -f "$DOTFILES_DIR/config/vim/setup.sh" ]]; then
+        echo "Setting up Vim configuration..."
+        bash "$DOTFILES_DIR/config/vim/setup.sh"
+    fi
+
+    # SSH configuration (optional)
+    echo ""
+    read -p "Setup SSH configuration? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ -f "$DOTFILES_DIR/config/ssh/setup.sh" ]]; then
+            bash "$DOTFILES_DIR/config/ssh/setup.sh"
+        fi
+    fi
+}
+
 # Main
 main() {
     install_dependencies
     create_symlinks
     set_default_shell
+    setup_configs
     print_instructions
 }
 

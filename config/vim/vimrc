@@ -1,0 +1,176 @@
+" ===== Basic Settings =====
+set nocompatible              " Use Vim settings, rather than Vi settings
+set encoding=utf-8            " Use UTF-8 encoding
+set number                    " Show line numbers
+set relativenumber            " Show relative line numbers
+set ruler                     " Show cursor position
+set showcmd                   " Show incomplete commands
+set showmatch                 " Show matching parentheses
+set wildmenu                  " Better command-line completion
+set wildmode=list:longest     " Complete longest match, then list others
+set confirm                   " Ask for confirmation instead of failing
+
+" ===== Search Settings =====
+set hlsearch                  " Highlight search results
+set incsearch                 " Incremental search
+set ignorecase                " Case insensitive search
+set smartcase                 " Case sensitive if uppercase letters are used
+
+" ===== Indentation =====
+set autoindent                " Copy indent from current line
+set smartindent               " Smart autoindenting
+set tabstop=4                 " Number of spaces that a tab counts for
+set shiftwidth=4              " Number of spaces to use for autoindenting
+set expandtab                 " Use spaces instead of tabs
+set smarttab                  " Smart tab behavior
+
+" ===== Visual Settings =====
+syntax on                     " Enable syntax highlighting
+set background=dark           " Dark background
+set t_Co=256                  " 256 colors
+set laststatus=2              " Always show status line
+set scrolloff=8               " Keep 8 lines visible above/below cursor
+set sidescrolloff=8           " Keep 8 columns visible left/right of cursor
+
+" ===== File Handling =====
+set hidden                    " Allow hidden buffers
+set autoread                  " Automatically read changed files
+set noswapfile                " Don't use swap files
+set nobackup                  " Don't create backup files
+set nowb                      " Don't write backup files
+
+" ===== Undo Settings =====
+if has('persistent_undo')
+    set undodir=~/.vim/undo
+    set undofile
+    " Create undo directory if it doesn't exist
+    if !isdirectory(&undodir)
+        call mkdir(&undodir, 'p')
+    endif
+endif
+
+" ===== Status Line =====
+set statusline=%F%m%r%h%w      " Full path, modified, readonly, help, preview
+set statusline+=\ [%{&ff}]    " File format
+set statusline+=\ [%Y]        " File type
+set statusline+=\ [%l,%c]     " Line and column
+set statusline+=\ [%p%%]      " Percentage through file
+
+" ===== Key Mappings =====
+" Set leader key
+let mapleader = " "
+
+" Better navigation
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Clear search highlighting
+nnoremap <leader>h :nohlsearch<CR>
+
+" Quick save and quit
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>x :x<CR>
+
+" Buffer navigation
+nnoremap <leader>n :bnext<CR>
+nnoremap <leader>p :bprevious<CR>
+nnoremap <leader>d :bdelete<CR>
+
+" Open file explorer
+nnoremap <leader>e :Explore<CR>
+
+" Copy to system clipboard (requires +clipboard)
+if has('clipboard')
+    vnoremap <leader>y "+y
+    nnoremap <leader>Y "+yy
+    nnoremap <leader>p "+p
+    nnoremap <leader>P "+P
+endif
+
+" ===== Auto Commands =====
+if has('autocmd')
+    " Remove trailing whitespace on save
+    autocmd BufWritePre * :%s/\s\+$//e
+
+    " Return to last edit position when opening files
+    autocmd BufReadPost *
+        \ if line("'\"") > 0 && line("'\"") <= line("$") |
+        \   exe "normal! g`\"" |
+        \ endif
+
+    " File type specific settings
+    autocmd FileType python setlocal tabstop=4 shiftwidth=4 expandtab
+    autocmd FileType javascript setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType html setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType css setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType yaml setlocal tabstop=2 shiftwidth=2 expandtab
+    autocmd FileType json setlocal tabstop=2 shiftwidth=2 expandtab
+endif
+
+" ===== Plugin Management (vim-plug) =====
+" Auto-install vim-plug if not present
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+call plug#begin('~/.vim/plugged')
+
+" Essential plugins
+Plug 'tpope/vim-sensible'        " Sensible defaults
+Plug 'tpope/vim-surround'        " Surround text objects
+Plug 'tpope/vim-commentary'      " Comment/uncomment code
+Plug 'tpope/vim-fugitive'        " Git integration
+
+" File navigation
+Plug 'preservim/nerdtree'        " File tree explorer
+Plug 'ctrlpvim/ctrlp.vim'        " Fuzzy file finder
+
+" Appearance
+Plug 'dracula/vim', { 'as': 'dracula' }  " Dracula theme
+Plug 'vim-airline/vim-airline'           " Status line
+Plug 'vim-airline/vim-airline-themes'    " Status line themes
+
+" Language support
+Plug 'sheerun/vim-polyglot'      " Language pack
+
+call plug#end()
+
+" ===== Plugin Configuration =====
+
+" Dracula theme
+if has('gui_running') || &t_Co >= 256
+    try
+        colorscheme dracula
+    catch /^Vim\%((\a\+)\)\=:E185/
+        " Dracula not available, use default
+        colorscheme default
+    endtry
+endif
+
+" Airline
+let g:airline_theme='dracula'
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#show_buffers = 1
+
+" NERDTree
+nnoremap <leader>t :NERDTreeToggle<CR>
+let NERDTreeShowHidden=1
+
+" CtrlP
+let g:ctrlp_map = '<leader>f'
+let g:ctrlp_show_hidden = 1
+let g:ctrlp_custom_ignore = {
+  \ 'dir':  '\v[\/](\.(git|hg|svn)|node_modules|__pycache__)$',
+  \ 'file': '\v\.(exe|so|dll|pyc)$',
+  \ }
+
+" ===== Local Configuration =====
+" Load local vimrc if it exists (not tracked in git)
+if filereadable(expand('~/.vimrc.local'))
+    source ~/.vimrc.local
+endif
