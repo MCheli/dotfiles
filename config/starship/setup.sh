@@ -129,9 +129,9 @@ setup_starship_config() {
             esac
         done
     else
-        # Non-interactive mode - use default
+        # Non-interactive mode - use P10K-matched style
         config_file="starship.toml"
-        echo "Using default colorful style (non-interactive mode)"
+        echo "Using P10K-matched style (non-interactive mode)"
     fi
 
     # Create symlink to chosen starship config
