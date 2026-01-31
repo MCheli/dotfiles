@@ -231,6 +231,16 @@ setup_configs() {
         bash "$DOTFILES_DIR/config/vim/setup.sh"
     fi
 
+    # VS Code configuration (optional)
+    echo ""
+    read -p "Setup Visual Studio Code? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ -f "$DOTFILES_DIR/config/vscode/setup.sh" ]]; then
+            bash "$DOTFILES_DIR/config/vscode/setup.sh"
+        fi
+    fi
+
     # SSH configuration (optional)
     echo ""
     read -p "Setup SSH configuration? (y/N): " -n 1 -r

@@ -1,0 +1,34 @@
+# Essential Extensions
+dracula-theme.theme-dracula
+vscode-icons-team.vscode-icons
+ms-vscode.vscode-typescript-next
+ms-python.python
+ms-python.black-formatter
+ms-python.flake8
+esbenp.prettier-vscode
+bradlc.vscode-tailwindcss
+ms-vscode.vscode-json
+
+# Git Extensions
+eamodio.gitlens
+mhutchie.git-graph
+
+# Language Support
+ms-vscode.vscode-html-languageservice
+ms-vscode.vscode-css-languageservice
+ms-vscode.vscode-markdown
+
+# Productivity Extensions
+ms-vscode.vscode-intellicode
+formulahendry.auto-rename-tag
+streetsidesoftware.code-spell-checker
+ms-vsliveshare.vsliveshare
+
+# Docker & DevOps
+ms-vscode-remote.remote-containers
+ms-azuretools.vscode-docker
+
+# Optional but useful
+gruntfuggly.todo-tree
+alefragnani.project-manager
+ms-vscode.hexeditor
