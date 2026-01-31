@@ -1,6 +1,6 @@
-# My Dotfiles
+# MCheli's Dotfiles
 
-A cross-platform dotfiles setup with automated installation for macOS, Linux, and remote servers.
+Mark Cheli's cross-platform dotfiles setup with automated installation for macOS, Linux, and remote servers.
 
 ## Features
 
@@ -15,7 +15,7 @@ A cross-platform dotfiles setup with automated installation for macOS, Linux, an
 ### Local Installation
 
 ```bash
-git clone https://github.com/USERNAME/dotfiles.git ~/dotfiles
+git clone https://github.com/mcheli/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./scripts/setup.sh
 ```
@@ -23,13 +23,13 @@ cd ~/dotfiles
 ### Remote Server (One-liner)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USERNAME/dotfiles/main/scripts/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
 or
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/USERNAME/dotfiles/main/scripts/bootstrap.sh | bash
+wget -qO- https://raw.githubusercontent.com/mcheli/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
 ## What's Included
@@ -50,6 +50,7 @@ wget -qO- https://raw.githubusercontent.com/USERNAME/dotfiles/main/scripts/boots
 - **Git configuration** with useful aliases
 - **SSH client** configuration with security defaults
 - **Vim/Neovim** setup with sensible defaults
+- **Visual Studio Code** with Dracula theme, Nerd Font, and essential extensions
 - **Common aliases** and shell functions
 
 ## Customization
@@ -71,6 +72,25 @@ Save your configuration to the dotfiles:
 ```bash
 cp ~/.p10k.zsh ~/dotfiles/zsh/p10k.zsh
 ```
+
+### Visual Studio Code
+The setup includes optional VS Code configuration:
+```bash
+# Manual VS Code setup
+bash config/vscode/setup.sh
+
+# Skip VS Code setup
+bash config/vscode/setup.sh --skip
+
+# Force setup even on SSH sessions
+bash config/vscode/setup.sh --force
+```
+
+Features included:
+- Dracula theme with VS Code icons
+- MesloLGS Nerd Font for editor and terminal
+- Essential extensions (Python, Git, TypeScript, Docker)
+- Terminal integration with zsh configuration
 
 ### Custom Aliases
 Add personal aliases to `zsh/aliases.zsh` or create `~/.zsh_local` for machine-specific settings.
@@ -118,6 +138,10 @@ dotfiles/
 ├── scripts/          # Installation and maintenance scripts
 ├── zsh/             # Zsh configuration and theme settings
 ├── config/          # Application configurations
+│   ├── git/         # Git configuration and templates
+│   ├── vim/         # Vim/Neovim configuration
+│   ├── vscode/      # Visual Studio Code settings and extensions
+│   └── ssh/         # SSH client configuration
 ├── terminal/        # Terminal themes and profiles
 └── templates/       # Configuration templates
 ```
