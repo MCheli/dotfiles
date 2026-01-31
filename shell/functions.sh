@@ -99,9 +99,9 @@ fd() {
 }
 
 # Grep with context and color
-search() {
+findin() {
     if [ $# -eq 0 ]; then
-        echo "Usage: search <pattern> [directory]"
+        echo "Usage: findin <pattern> [directory]"
         return 1
     fi
     local pattern="$1"
