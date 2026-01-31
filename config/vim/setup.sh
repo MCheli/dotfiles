@@ -21,11 +21,29 @@ else
     exit 1
 fi
 
-# Install vim-plug if not present and install plugins
+# Install vim-plug and plugins
 if command -v vim &>/dev/null; then
     echo "Installing vim plugins..."
-    vim +PlugInstall +qall
-    echo "✓ Vim plugins installed"
+
+    # Ensure vim-plug is installed first
+    if [[ ! -f ~/.vim/autoload/plug.vim ]]; then
+        echo "Installing vim-plug..."
+        curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    fi
+
+    # Check if we're in a non-interactive environment
+    if [[ ! -t 0 ]] || [[ ! -t 1 ]] || [[ -n "$SSH_CLIENT" ]]; then
+        # Non-interactive mode - skip plugin installation
+        echo "Non-interactive mode detected - vim-plug installed"
+        echo "Plugins will be installed automatically on first vim use"
+        echo "Or run manually: vim +PlugInstall +qall"
+    else
+        # Interactive mode - install plugins
+        vim +PlugInstall +qall 2>/dev/null
+    fi
+
+    echo "✓ Vim plugins setup complete"
 else
     echo "! Vim not found - skipping plugin installation"
 fi
