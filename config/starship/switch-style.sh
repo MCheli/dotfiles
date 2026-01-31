@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "🌟 Starship Style Switcher"
 echo ""
 echo "Available styles:"
-echo "  1) Colorful - Colorful segments like P10K rainbow"
+echo "  1) P10K Match - Exact match to your Powerlevel10k theme"
 echo "  2) Lean - Minimalist single-line like P10K lean"
 echo "  3) Pure - Clean two-line like P10K pure"
 echo "  4) Powerline - Classic powerline with arrows"
@@ -17,7 +17,7 @@ while true; do
     case $choice in
         1)
             config_file="starship.toml"
-            style_name="Colorful"
+            style_name="P10K Match"
             break
             ;;
         2)

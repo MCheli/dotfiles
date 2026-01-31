@@ -88,18 +88,19 @@ setup_starship_config() {
         # Interactive mode - let user choose style
         echo ""
         echo "Available Starship styles:"
-        echo "  1) Colorful (current) - Colorful segments like P10K rainbow"
+        echo "  1) P10K Match (default) - Exact match to your Powerlevel10k theme"
         echo "  2) Lean - Minimalist single-line like P10K lean"
         echo "  3) Pure - Clean two-line like P10K pure"
         echo "  4) Powerline - Classic powerline with arrows"
+        echo "  5) Original - Original colorful segments"
         echo ""
 
         while true; do
-            read -p "Choose style [1-4] (default: 1): " choice
+            read -p "Choose style [1-5] (default: 1): " choice
             case ${choice:-1} in
                 1)
                     config_file="starship.toml"
-                    echo "Using colorful style"
+                    echo "Using P10K-matched style"
                     break
                     ;;
                 2)
@@ -115,6 +116,11 @@ setup_starship_config() {
                 4)
                     config_file="powerline.toml"
                     echo "Using powerline style"
+                    break
+                    ;;
+                5)
+                    config_file="starship-original.toml"
+                    echo "Using original colorful style"
                     break
                     ;;
                 *)
