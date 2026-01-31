@@ -12,7 +12,7 @@ add_newline = true
 # OS icon (matches P10K os_icon) - background=7 (white), foreground=232 (black)
 [os]
 disabled = false
-style = "bg:#ffffff fg:#080808"
+style = "bg:7 fg:0 bold"
 format = "[$symbol ]($style)"
 
 [os.symbols]
@@ -22,7 +22,7 @@ Windows = ""
 
 # Directory (matches P10K dir) - background=4 (blue), foreground=254 (light gray)
 [directory]
-style = "bg:#1e87af fg:#ffffff"
+style = "bg:4 fg:15 bold"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncate_to_repo = true
@@ -31,12 +31,12 @@ truncation_symbol = "…/"
 # Git branch (matches P10K vcs clean) - background=2 (green), foreground=254
 [git_branch]
 symbol = ""
-style = "bg:#008700 fg:#ffffff"
+style = "bg:2 fg:0 bold"
 format = "[ $symbol $branch ]($style)"
 
 # Git status (matches P10K vcs modified) - background=3 (yellow), foreground=254
 [git_status]
-style = "bg:#af8700 fg:#ffffff"
+style = "bg:3 fg:0 bold"
 format = "[$all_status$ahead_behind ]($style)"
 conflicted = "✖"
 ahead = "⇡${count}"
@@ -54,16 +54,17 @@ deleted = "✘"
 [fill]
 symbol = " "
 
-# Status (matches P10K status) - background=0 (black) for OK, background=1 (red) for error
+# Status (matches P10K status) - only show on non-zero exit codes
 [status]
 disabled = false
-style = "bg:#000000 fg:#008700"
+style = "bg:1 fg:15 bold"
 success_symbol = ""
-format = "[ $symbol $common_meaning$signal_name$maybe_int ]($style)"
+format = "[$symbol$status ]($style)"
+symbol = "✘"
 
 # Command execution time (matches P10K command_execution_time) - background=3 (yellow)
 [cmd_duration]
-style = "bg:#af8700 fg:#000000"
+style = "bg:3 fg:0 bold"
 format = "[ $duration ]($style)"
 min_time = 2000
 
@@ -114,7 +115,7 @@ format = "[ $symbol $context ]($style)"
 # Time (matches P10K time) - background=7 (white), foreground=0 (black)
 [time]
 disabled = false
-style = "bg:#ffffff fg:#000000"
+style = "bg:7 fg:0 bold"
 format = "[ $time ]($style)"
 time_format = "%I:%M %p"
 
