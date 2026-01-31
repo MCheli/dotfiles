@@ -6,17 +6,64 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "=== Dotfiles Setup ==="
 echo "Dotfiles directory: $DOTFILES_DIR"
 
-# Detect OS
+# Detect OS and architecture
 OS="$(uname -s)"
-echo "Detected OS: $OS"
+ARCH="$(uname -m)"
+echo "Detected OS: $OS ($ARCH)"
 
-# Install Homebrew (macOS) or use apt (Linux)
+# Detect if running on Raspberry Pi
+is_raspberry_pi() {
+    [[ -f /proc/device-tree/model ]] && grep -qi "raspberry" /proc/device-tree/model
+}
+
+if is_raspberry_pi; then
+    echo "Detected: Raspberry Pi"
+fi
+
+# Install Nerd Font on Linux (for local desktop use)
+install_nerd_font_linux() {
+    if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+        echo "SSH session detected - skipping font installation (install on your local machine instead)"
+        return
+    fi
+
+    # Check if running a desktop environment
+    if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+        echo "No display detected - skipping font installation"
+        return
+    fi
+
+    echo "Installing MesloLGS Nerd Font..."
+    FONT_DIR="${HOME}/.local/share/fonts"
+    mkdir -p "$FONT_DIR"
+
+    # Download Meslo Nerd Font
+    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip"
+    TEMP_DIR=$(mktemp -d)
+
+    if curl -fsSL "$FONT_URL" -o "$TEMP_DIR/Meslo.zip"; then
+        unzip -q "$TEMP_DIR/Meslo.zip" -d "$TEMP_DIR/meslo"
+        cp "$TEMP_DIR/meslo"/*.ttf "$FONT_DIR/" 2>/dev/null || true
+        rm -rf "$TEMP_DIR"
+
+        # Refresh font cache
+        if command -v fc-cache &>/dev/null; then
+            fc-cache -f "$FONT_DIR"
+        fi
+        echo "Nerd Font installed to $FONT_DIR"
+    else
+        echo "Warning: Could not download Nerd Font"
+    fi
+}
+
+# Install dependencies based on OS
 install_dependencies() {
     if [[ "$OS" == "Darwin" ]]; then
         # macOS
         if ! command -v brew &>/dev/null; then
             echo "Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)"
         fi
 
         echo "Installing packages via Homebrew..."
@@ -25,32 +72,59 @@ install_dependencies() {
         # Install Nerd Font (only on local machine, not SSH)
         if [[ -z "$SSH_CLIENT" ]]; then
             brew install --cask font-meslo-lg-nerd-font
+
+            # Auto-configure Terminal.app
+            if [[ -f "$DOTFILES_DIR/scripts/configure-terminal-app.sh" ]]; then
+                echo "Configuring Terminal.app..."
+                bash "$DOTFILES_DIR/scripts/configure-terminal-app.sh"
+            fi
         fi
 
     elif [[ "$OS" == "Linux" ]]; then
-        # Linux
-        echo "Installing zsh..."
+        # Linux (Ubuntu, Debian, Raspberry Pi OS)
+        echo "Installing dependencies..."
+
         if command -v apt-get &>/dev/null; then
-            sudo apt-get update && sudo apt-get install -y zsh git curl
+            # Debian/Ubuntu/Raspberry Pi OS
+            sudo apt-get update
+            sudo apt-get install -y zsh git curl unzip fontconfig
+
+        elif command -v dnf &>/dev/null; then
+            # Fedora/RHEL
+            sudo dnf install -y zsh git curl unzip fontconfig
+
         elif command -v yum &>/dev/null; then
-            sudo yum install -y zsh git curl
+            # Older RHEL/CentOS
+            sudo yum install -y zsh git curl unzip fontconfig
+
         elif command -v pacman &>/dev/null; then
-            sudo pacman -S --noconfirm zsh git curl
+            # Arch Linux
+            sudo pacman -S --noconfirm zsh git curl unzip fontconfig
         fi
 
         # Install Powerlevel10k
         if [[ ! -d "${HOME}/.powerlevel10k" ]]; then
             echo "Installing Powerlevel10k..."
             git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.powerlevel10k
+        else
+            echo "Updating Powerlevel10k..."
+            git -C ~/.powerlevel10k pull --depth=1 2>/dev/null || true
         fi
 
-        # Install zsh plugins
+        # Install zsh-autosuggestions
         if [[ ! -d "${HOME}/.zsh-autosuggestions" ]]; then
-            git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh-autosuggestions
+            echo "Installing zsh-autosuggestions..."
+            git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.zsh-autosuggestions
         fi
+
+        # Install zsh-syntax-highlighting
         if [[ ! -d "${HOME}/.zsh-syntax-highlighting" ]]; then
-            git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh-syntax-highlighting
+            echo "Installing zsh-syntax-highlighting..."
+            git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh-syntax-highlighting
         fi
+
+        # Install Nerd Font for desktop Linux
+        install_nerd_font_linux
     fi
 }
 
@@ -76,15 +150,69 @@ create_symlinks() {
 
 # Set zsh as default shell
 set_default_shell() {
+    local zsh_path
+    zsh_path="$(which zsh)"
+
     if [[ "$SHELL" != *"zsh"* ]]; then
         echo "Setting zsh as default shell..."
-        if grep -q "$(which zsh)" /etc/shells; then
-            chsh -s "$(which zsh)"
+
+        # Add zsh to /etc/shells if not present
+        if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
+            echo "$zsh_path" | sudo tee -a /etc/shells
+        fi
+
+        # Change shell
+        if chsh -s "$zsh_path"; then
+            echo "Default shell changed to zsh"
         else
-            echo "$(which zsh)" | sudo tee -a /etc/shells
-            chsh -s "$(which zsh)"
+            echo "Warning: Could not change default shell. You may need to run: chsh -s $zsh_path"
+        fi
+    else
+        echo "zsh is already the default shell"
+    fi
+}
+
+# Print post-install instructions
+print_instructions() {
+    echo ""
+    echo "=========================================="
+    echo "         Setup Complete!"
+    echo "=========================================="
+    echo ""
+    echo "Next steps:"
+    echo ""
+    echo "1. Restart your terminal or run:"
+    echo "   exec zsh"
+    echo ""
+    echo "2. The Powerlevel10k configuration wizard will start automatically."
+    echo "   Or run manually: p10k configure"
+    echo ""
+
+    if [[ "$OS" == "Darwin" ]]; then
+        if [[ -z "$SSH_CLIENT" ]]; then
+            echo "3. Terminal.app should be auto-configured. If not:"
+            echo "   - Open Terminal → Preferences → Profiles"
+            echo "   - Select 'Dracula' and click 'Default'"
+            echo "   - Set font to 'MesloLGS Nerd Font Mono'"
+            echo ""
+        fi
+    elif [[ "$OS" == "Linux" ]]; then
+        if [[ -n "$SSH_CLIENT" || -n "$SSH_TTY" ]]; then
+            echo "3. You're on SSH - fonts are rendered by your LOCAL terminal."
+            echo "   Make sure your local terminal has a Nerd Font installed."
+            echo ""
+        else
+            echo "3. Set your terminal font to 'MesloLGS Nerd Font Mono':"
+            echo "   - GNOME Terminal: Preferences → Profile → Custom font"
+            echo "   - Konsole: Settings → Edit Current Profile → Appearance"
+            echo "   - LXTerminal: Edit → Preferences → Style"
+            echo ""
         fi
     fi
+
+    echo "4. After configuring p10k, save your config to dotfiles:"
+    echo "   cp ~/.p10k.zsh $DOTFILES_DIR/zsh/p10k.zsh"
+    echo ""
 }
 
 # Main
@@ -92,18 +220,7 @@ main() {
     install_dependencies
     create_symlinks
     set_default_shell
-
-    echo ""
-    echo "=== Setup Complete ==="
-    echo ""
-    echo "Next steps:"
-    echo "1. Restart your terminal or run: exec zsh"
-    echo "2. Run 'p10k configure' to customize your prompt"
-    echo ""
-    if [[ "$OS" == "Darwin" && -z "$SSH_CLIENT" ]]; then
-        echo "3. Set your terminal font to 'MesloLGS Nerd Font'"
-        echo "4. Import Dracula.terminal theme: open $DOTFILES_DIR/terminal/Dracula.terminal"
-    fi
+    print_instructions
 }
 
 main "$@"
