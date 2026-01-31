@@ -306,6 +306,16 @@ setup_configs() {
         bash "$DOTFILES_DIR/config/vim/setup.sh"
     fi
 
+    # Starship prompt configuration (optional)
+    echo ""
+    read -p "Setup Starship prompt (enhanced cross-shell theming)? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ -f "$DOTFILES_DIR/config/starship/setup.sh" ]]; then
+            bash "$DOTFILES_DIR/config/starship/setup.sh"
+        fi
+    fi
+
     # VS Code configuration (optional)
     echo ""
     read -p "Setup Visual Studio Code? (y/N): " -n 1 -r

@@ -38,8 +38,8 @@ wget -qO- https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstr
 
 ### Shell Configuration
 - **Bash and Zsh support** with shared configuration
-- **Powerlevel10k theme** for zsh with smart fallback
-- **Colorized prompt** for bash with git branch support
+- **Enhanced prompts**: Powerlevel10k (zsh), Starship (both), or colorized fallback
+- **Starship prompt** - cross-shell compatible theming with git integration
 - **Shared aliases and functions** across both shells
 - **Autosuggestions and syntax highlighting** (zsh)
 - **Optimized history** settings for both shells
@@ -77,6 +77,20 @@ Save your configuration to the dotfiles:
 cp ~/.p10k.zsh ~/dotfiles/zsh/p10k.zsh
 ```
 
+### Starship Prompt
+Enhanced cross-shell prompt theming:
+```bash
+# Manual Starship setup
+bash config/starship/setup.sh
+
+# Features:
+# - Works in both bash and zsh
+# - Git branch and status indicators
+# - Language/runtime version display
+# - Docker context awareness
+# - Consistent appearance across shells
+```
+
 ### Visual Studio Code
 The setup includes optional VS Code configuration:
 ```bash
@@ -94,7 +108,7 @@ Features included:
 - Dracula theme with VS Code icons
 - MesloLGS Nerd Font for editor and terminal
 - Essential extensions (Python, Git, TypeScript, Docker)
-- Terminal integration with zsh configuration
+- Terminal integration with shell configuration
 
 ### Shell Switching
 The setup supports both bash and zsh. During installation, you'll be prompted to choose:
@@ -170,6 +184,7 @@ dotfiles/
 │   ├── git/         # Git configuration and templates
 │   ├── vim/         # Vim/Neovim configuration
 │   ├── vscode/      # Visual Studio Code settings and extensions
+│   ├── starship/    # Starship prompt configuration and setup
 │   └── ssh/         # SSH client configuration
 ├── terminal/        # Terminal themes and profiles
 └── templates/       # Configuration templates

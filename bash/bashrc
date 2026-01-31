@@ -56,12 +56,12 @@ else
         git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
     }
 
-    # Colorized prompt
+    # Enhanced colorized prompt with git status
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-        # We have color support
+        # We have color support - enhanced prompt
         PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[01;31m\]$(parse_git_branch)\[\033[00m\]\$ '
     else
-        # No color support
+        # No color support - simple but functional
         PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w$(parse_git_branch)\$ '
     fi
 fi
