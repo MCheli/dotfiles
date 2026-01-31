@@ -61,23 +61,23 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 
 # ===== Load Additional Configurations =====
-# Get the directory where this zshrc is located
+# Get the dotfiles directory
 if [[ -L ~/.zshrc ]]; then
-    # If .zshrc is a symlink, get the actual location
-    DOTFILES_ZSH_DIR="$(dirname "$(readlink ~/.zshrc)")"
+    # If .zshrc is a symlink, get the dotfiles directory
+    DOTFILES_DIR="$(dirname "$(dirname "$(readlink ~/.zshrc)")")"
 else
     # Fallback - assume dotfiles structure
-    DOTFILES_ZSH_DIR="$HOME/dotfiles/zsh"
+    DOTFILES_DIR="$HOME/dotfiles"
 fi
 
-# Debug output (remove later)
-# echo "DOTFILES_ZSH_DIR: $DOTFILES_ZSH_DIR"
+# Load shared components (compatible with bash and zsh)
+[[ -f "$DOTFILES_DIR/shell/exports.sh" ]] && source "$DOTFILES_DIR/shell/exports.sh"
+[[ -f "$DOTFILES_DIR/shell/aliases.sh" ]] && source "$DOTFILES_DIR/shell/aliases.sh"
+[[ -f "$DOTFILES_DIR/shell/functions.sh" ]] && source "$DOTFILES_DIR/shell/functions.sh"
 
-# Load aliases
-[[ -f "$DOTFILES_ZSH_DIR/aliases.zsh" ]] && source "$DOTFILES_ZSH_DIR/aliases.zsh"
-
-# Load functions
-[[ -f "$DOTFILES_ZSH_DIR/functions.zsh" ]] && source "$DOTFILES_ZSH_DIR/functions.zsh"
+# Load zsh-specific components (legacy support)
+[[ -f "$DOTFILES_DIR/zsh/aliases.zsh" ]] && source "$DOTFILES_DIR/zsh/aliases.zsh"
+[[ -f "$DOTFILES_DIR/zsh/functions.zsh" ]] && source "$DOTFILES_DIR/zsh/functions.zsh"
 
 # Load local customizations (not tracked in git)
 [[ -f ~/.zsh_local ]] && source ~/.zsh_local

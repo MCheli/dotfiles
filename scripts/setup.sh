@@ -133,42 +133,109 @@ create_symlinks() {
     echo "Creating symlinks..."
 
     # Backup existing files
-    for file in ~/.zshrc ~/.p10k.zsh; do
+    for file in ~/.bashrc ~/.bash_profile ~/.zshrc ~/.p10k.zsh; do
         if [[ -f "$file" && ! -L "$file" ]]; then
             echo "Backing up $file to ${file}.backup"
             mv "$file" "${file}.backup"
         fi
     done
 
-    # Create symlinks
+    # Create bash symlinks
+    ln -sf "$DOTFILES_DIR/bash/bashrc" ~/.bashrc
+    ln -sf "$DOTFILES_DIR/bash/bash_profile" ~/.bash_profile
+
+    # Create zsh symlinks
     ln -sf "$DOTFILES_DIR/zsh/zshrc" ~/.zshrc
 
+    # Create p10k symlink if config exists
     if [[ -f "$DOTFILES_DIR/zsh/p10k.zsh" ]]; then
         ln -sf "$DOTFILES_DIR/zsh/p10k.zsh" ~/.p10k.zsh
     fi
+
+    echo "Shell configuration files linked for both bash and zsh"
 }
 
-# Set zsh as default shell
-set_default_shell() {
-    local zsh_path
-    zsh_path="$(which zsh)"
+# Prompt user for shell preference
+setup_shell() {
+    echo ""
+    echo "=========================================="
+    echo "         Shell Configuration"
+    echo "=========================================="
+    echo ""
 
-    if [[ "$SHELL" != *"zsh"* ]]; then
-        echo "Setting zsh as default shell..."
+    # Detect current shell
+    local current_shell="$(basename "$SHELL")"
+    echo "Current default shell: $current_shell"
+    echo ""
+    echo "Available options:"
+    echo "  1) Keep current shell ($current_shell)"
+    echo "  2) Switch to bash"
+    echo "  3) Switch to zsh (with Powerlevel10k theme)"
+    echo ""
 
-        # Add zsh to /etc/shells if not present
-        if ! grep -q "$zsh_path" /etc/shells 2>/dev/null; then
-            echo "$zsh_path" | sudo tee -a /etc/shells
-        fi
+    # Get user choice
+    while true; do
+        read -p "Choose your shell [1-3]: " choice
+        case $choice in
+            1)
+                echo "Keeping current shell: $current_shell"
+                echo "Both bash and zsh configurations are available"
+                break
+                ;;
+            2)
+                echo "Switching to bash..."
+                change_shell "bash"
+                break
+                ;;
+            3)
+                echo "Switching to zsh..."
+                change_shell "zsh"
+                break
+                ;;
+            *)
+                echo "Please enter 1, 2, or 3"
+                ;;
+        esac
+    done
+}
 
-        # Change shell
-        if chsh -s "$zsh_path"; then
-            echo "Default shell changed to zsh"
-        else
-            echo "Warning: Could not change default shell. You may need to run: chsh -s $zsh_path"
-        fi
+# Change the default shell
+change_shell() {
+    local new_shell="$1"
+    local shell_path
+
+    case "$new_shell" in
+        "bash")
+            shell_path="$(which bash)"
+            ;;
+        "zsh")
+            shell_path="$(which zsh)"
+            ;;
+        *)
+            echo "Error: Unknown shell $new_shell"
+            return 1
+            ;;
+    esac
+
+    if [[ ! -x "$shell_path" ]]; then
+        echo "Error: $new_shell is not installed or not executable"
+        return 1
+    fi
+
+    # Add shell to /etc/shells if not present
+    if ! grep -q "$shell_path" /etc/shells 2>/dev/null; then
+        echo "Adding $shell_path to /etc/shells..."
+        echo "$shell_path" | sudo tee -a /etc/shells
+    fi
+
+    # Change shell
+    echo "Changing default shell to $new_shell..."
+    if chsh -s "$shell_path"; then
+        echo "✓ Default shell changed to $new_shell"
+        echo "  Restart your terminal or run 'exec $new_shell' to use the new shell"
     else
-        echo "zsh is already the default shell"
+        echo "⚠ Warning: Could not change default shell automatically"
+        echo "  You can change it manually with: chsh -s $shell_path"
     fi
 }
 
@@ -181,11 +248,14 @@ print_instructions() {
     echo ""
     echo "Next steps:"
     echo ""
-    echo "1. Restart your terminal or run:"
-    echo "   exec zsh"
+    echo "1. Restart your terminal or switch shells:"
+    echo "   - For bash: exec bash"
+    echo "   - For zsh:  exec zsh"
     echo ""
-    echo "2. The Powerlevel10k configuration wizard will start automatically."
-    echo "   Or run manually: p10k configure"
+    echo "2. If using zsh:"
+    echo "   - The Powerlevel10k configuration wizard will start automatically"
+    echo "   - Or run manually: p10k configure"
+    echo "   - If using bash: you'll get a nice colorized prompt automatically"
     echo ""
 
     if [[ "$OS" == "Darwin" ]]; then
@@ -210,7 +280,12 @@ print_instructions() {
         fi
     fi
 
-    echo "4. After configuring p10k, save your config to dotfiles:"
+    echo "4. Shell features available in both bash and zsh:"
+    echo "   - Shared aliases and functions"
+    echo "   - Git shortcuts and development tools"
+    echo "   - Cross-platform compatibility"
+    echo ""
+    echo "5. If you configured p10k, save your config to dotfiles:"
     echo "   cp ~/.p10k.zsh $DOTFILES_DIR/zsh/p10k.zsh"
     echo ""
 }
@@ -256,7 +331,7 @@ setup_configs() {
 main() {
     install_dependencies
     create_symlinks
-    set_default_shell
+    setup_shell
     setup_configs
     print_instructions
 }

@@ -1,0 +1,79 @@
+# MCheli's Bash Configuration
+# ~/.bashrc - Interactive shell configuration
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# History configuration
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+shopt -s checkwinsize
+
+# Enable programmable completion features
+if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+    fi
+fi
+
+# Load shared shell configuration
+# Get the dotfiles directory (try multiple methods)
+if [[ -n "${BASH_SOURCE[0]}" && "${BASH_SOURCE[0]}" != "/dev/stdin" ]]; then
+    # Method 1: Use BASH_SOURCE if available
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+elif [[ -L ~/.bashrc ]]; then
+    # Method 2: If .bashrc is a symlink, get the dotfiles directory
+    DOTFILES_DIR="$(dirname "$(dirname "$(readlink ~/.bashrc)")")"
+else
+    # Method 3: Fallback - assume dotfiles structure
+    DOTFILES_DIR="$HOME/dotfiles"
+fi
+
+# Load shared components
+[ -f "$DOTFILES_DIR/shell/exports.sh" ] && source "$DOTFILES_DIR/shell/exports.sh"
+[ -f "$DOTFILES_DIR/shell/aliases.sh" ] && source "$DOTFILES_DIR/shell/aliases.sh"
+[ -f "$DOTFILES_DIR/shell/functions.sh" ] && source "$DOTFILES_DIR/shell/functions.sh"
+
+# Bash-specific prompt configuration
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# Check if Starship prompt is available
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init bash)"
+else
+    # Fallback prompt with git branch support
+    parse_git_branch() {
+        git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+    }
+
+    # Colorized prompt
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+        # We have color support
+        PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[01;31m\]$(parse_git_branch)\[\033[00m\]\$ '
+    else
+        # No color support
+        PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w$(parse_git_branch)\$ '
+    fi
+fi
+
+# Enable color support for ls and grep
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Load local customizations
+[ -f ~/.bashrc.local ] && source ~/.bashrc.local

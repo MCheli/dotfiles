@@ -1,14 +1,16 @@
 # MCheli's Dotfiles
 
-Mark Cheli's cross-platform dotfiles setup with automated installation for macOS, Linux, and remote servers.
+Mark Cheli's cross-platform dotfiles setup with automated installation for macOS, Linux, and remote servers. Supports both **bash** and **zsh** with shared configuration.
 
 ## Features
 
 - **Cross-platform**: Works on macOS, Ubuntu, Debian, Fedora, Arch Linux, and Raspberry Pi
+- **Dual shell support**: Both bash and zsh configurations with shared components
 - **One-line install**: Bootstrap from any remote server
-- **Beautiful terminal**: Powerlevel10k theme with Dracula colors and Nerd Fonts
+- **Beautiful terminal**: Powerlevel10k theme for zsh, colorized prompt for bash
 - **Smart fallbacks**: Works even when dependencies aren't available
 - **SSH-aware**: Different behavior for local vs remote installations
+- **Shell choice**: Interactive prompt to choose your preferred shell
 
 ## Quick Install
 
@@ -35,10 +37,12 @@ wget -qO- https://raw.githubusercontent.com/MCheli/dotfiles/main/scripts/bootstr
 ## What's Included
 
 ### Shell Configuration
-- **Zsh** with Powerlevel10k theme
-- **Smart prompt fallback** for servers without Powerlevel10k
-- **Autosuggestions** and syntax highlighting
-- **Optimized history** settings
+- **Bash and Zsh support** with shared configuration
+- **Powerlevel10k theme** for zsh with smart fallback
+- **Colorized prompt** for bash with git branch support
+- **Shared aliases and functions** across both shells
+- **Autosuggestions and syntax highlighting** (zsh)
+- **Optimized history** settings for both shells
 - **Cross-platform PATH** configuration
 
 ### Terminal Appearance
@@ -92,8 +96,24 @@ Features included:
 - Essential extensions (Python, Git, TypeScript, Docker)
 - Terminal integration with zsh configuration
 
+### Shell Switching
+The setup supports both bash and zsh. During installation, you'll be prompted to choose:
+
+```bash
+# Switch shells after installation
+exec bash    # Switch to bash
+exec zsh     # Switch to zsh
+
+# Change default shell permanently
+chsh -s $(which bash)    # Set bash as default
+chsh -s $(which zsh)     # Set zsh as default
+```
+
 ### Custom Aliases
-Add personal aliases to `zsh/aliases.zsh` or create `~/.zsh_local` for machine-specific settings.
+Add personal aliases to:
+- `shell/aliases.sh` for both shells
+- `~/.bashrc.local` for bash-specific settings
+- `~/.zsh_local` for zsh-specific settings
 
 ## Platform-Specific Notes
 
@@ -136,7 +156,16 @@ git pull
 ```
 dotfiles/
 ├── scripts/          # Installation and maintenance scripts
-├── zsh/             # Zsh configuration and theme settings
+├── shell/           # Shared shell configuration (bash + zsh)
+│   ├── aliases.sh   # Common aliases for both shells
+│   ├── functions.sh # Utility functions for both shells
+│   └── exports.sh   # Environment variables and PATH
+├── bash/            # Bash-specific configuration
+│   ├── bashrc       # Bash interactive shell config
+│   └── bash_profile # Bash login shell config
+├── zsh/             # Zsh-specific configuration
+│   ├── zshrc        # Zsh interactive shell config
+│   └── p10k.zsh     # Powerlevel10k theme settings
 ├── config/          # Application configurations
 │   ├── git/         # Git configuration and templates
 │   ├── vim/         # Vim/Neovim configuration
