@@ -83,9 +83,54 @@ setup_starship_config() {
         mv ~/.config/starship.toml ~/.config/starship.toml.backup.$(date +%Y%m%d_%H%M%S)
     fi
 
-    # Create symlink to our starship config
+    # Check if interactive mode
+    if [[ -t 0 ]] && [[ -z "$SSH_CLIENT" || -t 1 ]]; then
+        # Interactive mode - let user choose style
+        echo ""
+        echo "Available Starship styles:"
+        echo "  1) Colorful (current) - Colorful segments like P10K rainbow"
+        echo "  2) Lean - Minimalist single-line like P10K lean"
+        echo "  3) Pure - Clean two-line like P10K pure"
+        echo "  4) Powerline - Classic powerline with arrows"
+        echo ""
+
+        while true; do
+            read -p "Choose style [1-4] (default: 1): " choice
+            case ${choice:-1} in
+                1)
+                    config_file="starship.toml"
+                    echo "Using colorful style"
+                    break
+                    ;;
+                2)
+                    config_file="lean.toml"
+                    echo "Using lean style"
+                    break
+                    ;;
+                3)
+                    config_file="pure.toml"
+                    echo "Using pure style"
+                    break
+                    ;;
+                4)
+                    config_file="powerline.toml"
+                    echo "Using powerline style"
+                    break
+                    ;;
+                *)
+                    echo "Please enter 1, 2, 3, or 4"
+                    ;;
+            esac
+        done
+    else
+        # Non-interactive mode - use default
+        config_file="starship.toml"
+        echo "Using default colorful style (non-interactive mode)"
+    fi
+
+    # Create symlink to chosen starship config
     echo "Linking Starship configuration..."
-    ln -sf "$SCRIPT_DIR/starship.toml" ~/.config/starship.toml
+    ln -sf "$SCRIPT_DIR/$config_file" ~/.config/starship.toml
 
     echo "✓ Starship configuration linked"
 }

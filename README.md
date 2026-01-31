@@ -78,18 +78,27 @@ cp ~/.p10k.zsh ~/dotfiles/zsh/p10k.zsh
 ```
 
 ### Starship Prompt
-Enhanced cross-shell prompt theming:
+Enhanced cross-shell prompt theming with multiple styles:
 ```bash
-# Manual Starship setup
+# Manual Starship setup (with style selection)
 bash config/starship/setup.sh
 
-# Features:
-# - Works in both bash and zsh
-# - Git branch and status indicators
-# - Language/runtime version display
-# - Docker context awareness
-# - Consistent appearance across shells
+# Switch styles anytime
+bash config/starship/switch-style.sh
+
+# Available styles:
+# 1) Colorful - Colorful segments like P10K rainbow
+# 2) Lean - Minimalist single-line like P10K lean
+# 3) Pure - Clean two-line like P10K pure
+# 4) Powerline - Classic powerline with arrows
 ```
+
+Features:
+- Works in both bash and zsh
+- Git branch and status indicators
+- Language/runtime version display
+- Docker context awareness
+- Multiple Powerlevel10k-inspired themes
 
 ### Visual Studio Code
 The setup includes optional VS Code configuration:

@@ -1,0 +1,109 @@
+# Starship Powerline Configuration - Classic P10K Powerline Style
+# Traditional powerline with arrows and segments
+
+format = """
+[](fg:#a3aed2)\
+[$os](bg:#a3aed2 fg:#090c0c)\
+[](bg:#769ff0 fg:#a3aed2)\
+[$username](bg:#769ff0 fg:#090c0c)\
+[](bg:#394260 fg:#769ff0)\
+[$directory](bg:#394260 fg:#a3aed2)\
+[](bg:#212736 fg:#394260)\
+[$git_branch](bg:#212736 fg:#a3aed2)\
+[$git_status](bg:#212736 fg:#a3aed2)\
+[](bg:#1d2230 fg:#212736)\
+[$python](bg:#1d2230 fg:#a3aed2)\
+[$nodejs](bg:#1d2230 fg:#a3aed2)\
+[$rust](bg:#1d2230 fg:#a3aed2)\
+[$golang](bg:#1d2230 fg:#a3aed2)\
+[$java](bg:#1d2230 fg:#a3aed2)\
+[$docker_context](bg:#1d2230 fg:#a3aed2)\
+[](bg:#16181d fg:#1d2230)\
+[$time](bg:#16181d fg:#a3aed2)\
+[ ](fg:#16181d)\
+$line_break\
+$character"""
+
+# Disable the blank line at the start of the prompt
+add_newline = false
+
+[os]
+style = "bg:#a3aed2 fg:#090c0c"
+disabled = true  # Enable to show OS symbol
+
+[username]
+show_always = true
+style_user = "bg:#769ff0 fg:#090c0c"
+style_root = "bg:#769ff0 fg:#090c0c"
+format = '[ $user ]($style)'
+
+[directory]
+style = "bg:#394260 fg:#a3aed2"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:#212736 fg:#a3aed2"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#212736 fg:#a3aed2"
+format = '[$all_status$ahead_behind ]($style)'
+conflicted = "✖"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date = "✓"
+untracked = "?"
+stashed = "$"
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+
+[python]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = ""
+style = "bg:#1d2230 fg:#a3aed2"
+format = '[ $symbol $context ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#16181d fg:#a3aed2"
+format = '[ ♥ $time ]($style)'
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[❯](bold green)'
+error_symbol = '[❯](bold red)'
+vimcmd_symbol = '[❮](bold green)'

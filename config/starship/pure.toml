@@ -1,0 +1,83 @@
+# Starship Pure Configuration - Two-line P10K Style
+# Clean two-line prompt, similar to P10K pure mode
+
+format = """
+$username$hostname$directory$git_branch$git_status$python$nodejs$rust$golang$java$docker_context
+$character"""
+
+[username]
+style_user = "bold blue"
+style_root = "bold red"
+format = "[$user]($style) "
+show_always = false
+
+[hostname]
+ssh_only = true
+style = "bold green"
+format = "[@$hostname]($style) "
+
+[directory]
+style = "bold cyan"
+truncation_length = 0
+truncate_to_repo = true
+format = "[$path]($style)"
+
+[git_branch]
+style = "bold purple"
+format = " [$symbol$branch]($style)"
+symbol = " "
+
+[git_status]
+style = "bold red"
+format = "[$all_status$ahead_behind]($style)"
+conflicted = " ✖"
+ahead = " ⇡${count}"
+behind = " ⇣${count}"
+diverged = " ⇕⇡${ahead_count}⇣${behind_count}"
+up_to_date = ""
+untracked = " ?"
+stashed = " $"
+modified = " !"
+staged = " +"
+renamed = " »"
+deleted = " ✘"
+
+[python]
+style = "bold yellow"
+format = " [$symbol$pyenv_prefix($version)]($style)"
+symbol = " "
+
+[nodejs]
+style = "bold green"
+format = " [$symbol($version)]($style)"
+symbol = " "
+
+[rust]
+style = "bold red"
+format = " [$symbol($version)]($style)"
+symbol = " "
+
+[golang]
+style = "bold cyan"
+format = " [$symbol($version)]($style)"
+symbol = " "
+
+[java]
+style = "bold blue"
+format = " [$symbol($version)]($style)"
+symbol = " "
+
+[docker_context]
+style = "bold blue"
+format = " [$symbol$context]($style)"
+symbol = " "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[cmd_duration]
+style = "bold yellow"
+format = " [took $duration]($style)"
+min_time = 2000
