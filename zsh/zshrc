@@ -17,11 +17,25 @@ fi
 
 # ===== Powerlevel10k Theme =====
 # Load from Homebrew (macOS) or home directory (Linux)
+# Falls back to a nice prompt if p10k isn't installed
+_p10k_loaded=0
 if [[ -f "/opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
     source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+    _p10k_loaded=1
 elif [[ -f "$HOME/.powerlevel10k/powerlevel10k.zsh-theme" ]]; then
     source ~/.powerlevel10k/powerlevel10k.zsh-theme
+    _p10k_loaded=1
 fi
+
+# Fallback prompt if Powerlevel10k not available (works on any server)
+if [[ $_p10k_loaded -eq 0 ]]; then
+    autoload -Uz vcs_info
+    precmd() { vcs_info }
+    zstyle ':vcs_info:git:*' formats ' %F{yellow}(%b)%f'
+    setopt PROMPT_SUBST
+    PROMPT='%F{cyan}%n%f@%F{magenta}%m%f:%F{blue}%~%f${vcs_info_msg_0_} %F{green}$%f '
+fi
+unset _p10k_loaded
 
 # ===== Zsh Plugins =====
 # Autosuggestions
