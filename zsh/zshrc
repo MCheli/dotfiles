@@ -1,0 +1,56 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# ===== PATH Configuration =====
+# Add local bin to PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# Rancher Desktop (if installed)
+[[ -d "$HOME/.rd/bin" ]] && export PATH="$HOME/.rd/bin:$PATH"
+
+# Homebrew (macOS)
+if [[ -f "/opt/homebrew/bin/brew" ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# ===== Powerlevel10k Theme =====
+# Load from Homebrew (macOS) or home directory (Linux)
+if [[ -f "/opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+    source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+elif [[ -f "$HOME/.powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+    source ~/.powerlevel10k/powerlevel10k.zsh-theme
+fi
+
+# ===== Zsh Plugins =====
+# Autosuggestions
+if [[ -f "/opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+elif [[ -f "$HOME/.zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+    source ~/.zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# Syntax highlighting (must be last)
+if [[ -f "/opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+elif [[ -f "$HOME/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+    source ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# ===== History Configuration =====
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+
+# ===== Useful Aliases =====
+alias ll='ls -lah'
+alias la='ls -la'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# ===== Load p10k configuration =====
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
