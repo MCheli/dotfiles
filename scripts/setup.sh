@@ -166,6 +166,16 @@ setup_shell() {
     # Detect current shell
     local current_shell="$(basename "$SHELL")"
     echo "Current default shell: $current_shell"
+
+    # Check if we're in a non-interactive environment (like curl | bash)
+    if [[ ! -t 0 ]] || [[ -n "$SSH_CLIENT" && ! -t 1 ]]; then
+        echo ""
+        echo "Non-interactive mode detected - keeping current shell ($current_shell)"
+        echo "Both bash and zsh configurations are available"
+        echo "To change shells later, run: ~/dotfiles/scripts/setup.sh"
+        return 0
+    fi
+
     echo ""
     echo "Available options:"
     echo "  1) Keep current shell ($current_shell)"
@@ -304,6 +314,18 @@ setup_configs() {
     if [[ -f "$DOTFILES_DIR/config/vim/setup.sh" ]]; then
         echo "Setting up Vim configuration..."
         bash "$DOTFILES_DIR/config/vim/setup.sh"
+    fi
+
+    # Check if we're in a non-interactive environment
+    if [[ ! -t 0 ]] || [[ -n "$SSH_CLIENT" && ! -t 1 ]]; then
+        echo ""
+        echo "Non-interactive mode detected - skipping optional configurations"
+        echo "Run ~/dotfiles/scripts/setup.sh locally for full interactive setup"
+        echo "Available optional setups:"
+        echo "  - bash ~/dotfiles/config/starship/setup.sh    # Starship prompt"
+        echo "  - bash ~/dotfiles/config/vscode/setup.sh      # VS Code"
+        echo "  - bash ~/dotfiles/config/ssh/setup.sh         # SSH config"
+        return 0
     fi
 
     # Starship prompt configuration (optional)
