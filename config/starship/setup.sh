@@ -29,7 +29,7 @@ install_starship() {
                 brew install starship
             else
                 echo "Installing Starship via curl..."
-                curl -sS https://starship.rs/install.sh | sh
+                curl --proto '=https' --tlsv1.2 -fsSL https://starship.rs/install.sh | sh
             fi
             ;;
 
@@ -38,7 +38,7 @@ install_starship() {
             if command -v apt-get &>/dev/null && [ -f /etc/debian_version ]; then
                 # Debian/Ubuntu - unfortunately no official package, use curl
                 echo "Installing Starship via curl (Debian/Ubuntu)..."
-                curl -sS https://starship.rs/install.sh | sh
+                curl --proto '=https' --tlsv1.2 -fsSL https://starship.rs/install.sh | sh
             elif command -v dnf &>/dev/null; then
                 # Fedora
                 sudo dnf install starship
@@ -48,7 +48,7 @@ install_starship() {
             else
                 # Fallback to curl install
                 echo "Installing Starship via curl..."
-                curl -sS https://starship.rs/install.sh | sh
+                curl --proto '=https' --tlsv1.2 -fsSL https://starship.rs/install.sh | sh
             fi
             ;;
 
