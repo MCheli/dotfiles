@@ -46,6 +46,15 @@ coverage/
 .env.local
 .env.*.local
 
+# Private keys and credential files (keep these out of any repo)
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ecdsa
+id_ed25519
+.pypirc
+
 # OS generated files
 .DS_Store
 .DS_Store?
