@@ -54,11 +54,11 @@ serve() {
     echo "Starting HTTP server on port $port..."
     echo "Access at: http://localhost:$port"
     if command -v python3 &>/dev/null; then
-        python3 -m http.server "$port"
+        python3 -m http.server --bind 127.0.0.1 "$port"
     elif command -v python &>/dev/null; then
         python -m SimpleHTTPServer "$port"
     elif command -v ruby &>/dev/null; then
-        ruby -run -e httpd . -p "$port"
+        ruby -run -e httpd . -b 127.0.0.1 -p "$port"
     else
         echo "No suitable HTTP server found (need python, python3, or ruby)"
         return 1
@@ -69,15 +69,15 @@ serve() {
 weather() {
     local city="${1:-}"
     if [[ -n "$city" ]]; then
-        curl -s "wttr.in/$city"
+        curl -fsS "https://wttr.in/$city"
     else
-        curl -s "wttr.in"
+        curl -fsS "https://wttr.in"
     fi
 }
 
 # Get public IP (function version)
 getmyip() {
-    curl -s ifconfig.me
+    curl -fsS https://ifconfig.me
 }
 
 # Find files by name
@@ -180,5 +180,5 @@ urldecode() {
 # Random password generator
 genpass() {
     local length=${1:-16}
-    openssl rand -base64 $((length * 3 / 4)) | tr -d "=+/" | cut -c1-${length}
+    LC_ALL=C tr -dc "A-Za-z0-9" < /dev/urandom | head -c "$length"; echo
 }

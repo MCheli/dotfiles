@@ -15,7 +15,8 @@ export HISTCONTROL="ignoreboth:erasedups"
 export NODE_ENV="development"
 
 # Python
-export PYTHONPATH="$HOME/.local/lib/python3/site-packages:$PYTHONPATH"
+# Don't set PYTHONPATH here: "dir:$PYTHONPATH" with an empty PYTHONPATH leaves a
+# trailing colon, which puts the current directory on sys.path for every python run.
 export PIP_REQUIRE_VIRTUALENV=false
 
 # Go (if installed)

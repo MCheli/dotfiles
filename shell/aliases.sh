@@ -33,7 +33,7 @@ alias top='htop'
 # Network
 alias ping='ping -c 5'
 alias ports='netstat -tulanp'
-alias myip='curl -s ifconfig.me'
+alias myip='curl -fsS https://ifconfig.me'
 alias localip='hostname -I | cut -d" " -f1'
 
 # ===== Development =====

@@ -41,10 +41,11 @@ install_vscode() {
             else
                 echo "Downloading VS Code for macOS..."
                 DOWNLOAD_URL="https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal"
-                curl -fsSL "$DOWNLOAD_URL" -o /tmp/vscode.zip
-                unzip -q /tmp/vscode.zip -d /tmp/
-                mv "/tmp/Visual Studio Code.app" /Applications/
-                rm /tmp/vscode.zip
+                TEMP_DIR=$(mktemp -d)
+                curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/vscode.zip"
+                unzip -q "$TEMP_DIR/vscode.zip" -d "$TEMP_DIR"
+                mv "$TEMP_DIR/Visual Studio Code.app" /Applications/
+                rm -rf "$TEMP_DIR"
                 # Add code command to PATH
                 ln -sf "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" /usr/local/bin/code 2>/dev/null || true
             fi
@@ -98,11 +99,12 @@ install_vscode() {
                     else
                         echo "Installing VS Code via direct download..."
                         DOWNLOAD_URL="https://code.visualstudio.com/sha/download?build=stable&os=linux-${VSCODE_ARCH}"
-                        curl -fsSL "$DOWNLOAD_URL" -o /tmp/vscode.tar.gz
-                        sudo tar -xzf /tmp/vscode.tar.gz -C /opt/
+                        TEMP_DIR=$(mktemp -d)
+                        curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/vscode.tar.gz"
+                        sudo tar -xzf "$TEMP_DIR/vscode.tar.gz" -C /opt/
                         sudo mv /opt/VSCode-linux-${VSCODE_ARCH} /opt/vscode
                         sudo ln -sf /opt/vscode/bin/code /usr/local/bin/code
-                        rm /tmp/vscode.tar.gz
+                        rm -rf "$TEMP_DIR"
                     fi
                     ;;
 
