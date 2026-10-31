@@ -4,7 +4,6 @@
 # ===== Global Defaults =====
 Host *
     # Security settings
-    Protocol 2
     HashKnownHosts yes
     VisualHostKey yes
     PasswordAuthentication no
@@ -18,8 +17,9 @@ Host *
     ServerAliveCountMax 2
     Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
     MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
-    KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256
-    HostKeyAlgorithms ssh-ed25519-cert-v01@openssh.com,ssh-rsa-cert-v01@openssh.com,ssh-ed25519,ssh-rsa,ecdsa-sha2-nistp521-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp521,ecdsa-sha2-nistp384,ecdsa-sha2-nistp256
+    # KexAlgorithms/HostKeyAlgorithms are left at OpenSSH defaults: a pinned list
+    # blocks the post-quantum kex (mlkem768x25519) that newer OpenSSH prefers, and
+    # "ssh-rsa" there means SHA-1 RSA signatures.
 
     # Convenience settings
     Compression yes
@@ -36,7 +36,7 @@ Host *
 #     User myusername
 #     Port 22
 #     IdentityFile ~/.ssh/id_ed25519
-#     ForwardAgent yes
+#     # Prefer ProxyJump over ForwardAgent; only forward the agent to hosts you trust
 
 # Development server example
 # Host dev
@@ -71,10 +71,12 @@ Host *
 #     IdentitiesOnly yes
 
 # ===== Local Network Shortcut =====
+# Accept keys for new LAN hosts on first connect, but still refuse changed keys.
+# (Avoid "StrictHostKeyChecking no" + "UserKnownHostsFile /dev/null": it
+# disables MITM protection entirely.) Host blocks are first-match, so put this
+# one above "Host *" or the global StrictHostKeyChecking wins.
 # Host 192.168.1.*
-#     StrictHostKeyChecking no
-#     UserKnownHostsFile /dev/null
-#     LogLevel QUIET
+#     StrictHostKeyChecking accept-new
 
 # ===== Notes =====
 # 1. Always use key-based authentication, disable password auth
