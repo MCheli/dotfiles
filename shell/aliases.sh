@@ -19,7 +19,7 @@ alias tree='tree -C'
 
 # Better defaults
 alias cp='cp -iv'
-alias mv='mv -iv'
+[[ -z "$CLAUDECODE" ]] && alias mv='mv -iv'  # not in Claude Code shells (CLAUDECODE=1): agents need plain output
 alias rm='rm -i'
 alias mkdir='mkdir -pv'
 
@@ -27,7 +27,7 @@ alias mkdir='mkdir -pv'
 alias df='df -h'
 alias du='du -h'
 alias free='free -h'
-alias ps='ps aux'
+[[ -z "$CLAUDECODE" ]] && alias ps='ps aux'  # not in Claude Code shells (CLAUDECODE=1): agents need plain output
 alias top='htop'
 
 # Network
@@ -75,7 +75,7 @@ alias activate='source venv/bin/activate'
 alias grep='grep --color=auto'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
-alias cat='cat -n'
+[[ -z "$CLAUDECODE" ]] && alias cat='cat -n'  # not in Claude Code shells (CLAUDECODE=1): agents need plain output
 
 # ===== Archives =====
 alias tarx='tar -xvf'
