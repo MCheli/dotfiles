@@ -1,0 +1,426 @@
+#!/usr/bin/python3 -I
+"""bus-session-reaper: archive finished session-bus sessions on the Mac mini.
+
+Sessions that the session bus starts (remotely from claude.ai through the bus
+gateway, or locally from another Claude Code session) write a result file and
+then sit idle as live background jobs until someone archives them in the
+Claude app. This tool does that: it runs `claude stop <short-id>` on each bus
+job that is finished and has been quiet for an hour. `claude stop` archives
+the claude.ai session and keeps the transcript; if the bus later sends the
+session a follow-up it simply resumes, and can be stopped again later.
+
+A job is stopped only when ALL of these hold:
+  * it belongs to a bus task (its short id is recorded in a bus registry) and
+    that task has a written .result.md;
+  * `claude agents --json` shows it live (has a pid), kind "background",
+    status "idle" and state "done" (never working, busy, blocked or waiting);
+  * the result file is at least --min-age minutes old (default 60);
+  * nothing about the job changed in the last --min-age minutes: its job
+    state, timeline, transcript and result file are all older than that;
+  * its name is not listed in ~/.config/bus-session-reaper/keep.txt.
+
+Jobs that are not bus tasks (Mark's own sessions) are never considered.
+It never runs `claude rm` or `claude purge`.
+
+Usage:
+  bus-session-reaper [--dry-run] [--verbose] [--min-age MINUTES]
+  bus-session-reaper install      # symlink, keep.txt, LaunchAgent (every 30 min)
+  bus-session-reaper uninstall    # unload and remove the LaunchAgent
+
+Python 3 standard library only; runs on the macOS system python (3.9).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Callable, Dict, Iterable, List, Optional
+
+LABEL = "com.markcheli.bus-session-reaper"
+DEFAULT_MIN_AGE_MIN = 60
+DEFAULT_KEEP_NAMES = ("ai-context-obsidian-r630",)
+STOP_TIMEOUT_S = 60
+AGENTS_TIMEOUT_S = 60
+
+
+# ── configuration ─────────────────────────────────────────────────────────
+
+
+def _env_paths(name: str, default: Iterable[str]) -> List[Path]:
+    raw = os.environ.get(name)
+    parts = raw.split(":") if raw else list(default)
+    return [Path(p).expanduser() for p in parts if p]
+
+
+@dataclass
+class Config:
+    """Where everything lives. Every path can be overridden, which is how the tests run."""
+
+    bus_homes: List[Path] = field(default_factory=lambda: _env_paths(
+        "BUS_SESSION_REAPER_BUS_HOMES", ("~/.session-bus-remote", "~/.session-bus")))
+    jobs_dir: Path = field(default_factory=lambda: Path(
+        os.environ.get("BUS_SESSION_REAPER_JOBS_DIR", "~/.claude/jobs")).expanduser())
+    keep_file: Path = field(default_factory=lambda: Path(
+        os.environ.get("BUS_SESSION_REAPER_KEEP_FILE", "~/.config/bus-session-reaper/keep.txt")).expanduser())
+    log_file: Path = field(default_factory=lambda: Path(
+        os.environ.get("BUS_SESSION_REAPER_LOG", "~/Library/Logs/bus-session-reaper.log")).expanduser())
+    claude_bin: str = field(default_factory=lambda: os.environ.get("CLAUDE_BIN")
+                            or ("/opt/homebrew/bin/claude" if os.path.exists("/opt/homebrew/bin/claude")
+                                else (shutil.which("claude") or "claude")))
+    min_age_s: int = DEFAULT_MIN_AGE_MIN * 60
+    dry_run: bool = False
+    verbose: bool = False
+
+
+# ── data gathering ────────────────────────────────────────────────────────
+
+
+@dataclass
+class BusTask:
+    task_id: str
+    name: str
+    bg_id: str
+    session_id: Optional[str]
+    result: Path
+    bus_home: Path
+
+
+def load_keep_names(path: Path) -> set:
+    """Names that must never be reaped: one per line, blank lines and # comments ignored."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return set()
+    names = set()
+    for line in text.splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            names.add(line)
+    return names
+
+
+def load_registry_tasks(bus_home: Path) -> Dict[str, BusTask]:
+    """bg_id -> task, from the bus registry's spawn events. The last spawn for a bg_id wins."""
+    reg = bus_home / "registry.jsonl"
+    tasks: Dict[str, BusTask] = {}
+    try:
+        lines = reg.read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError:
+        return tasks
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("event") != "spawn" or not ev.get("bg_id") or not ev.get("task_id"):
+            continue
+        result = ev.get("result") or str(bus_home / "tasks" / f"{ev['task_id']}.result.md")
+        tasks[ev["bg_id"]] = BusTask(
+            task_id=str(ev["task_id"]),
+            name=str(ev.get("name") or "?"),
+            bg_id=str(ev["bg_id"]),
+            session_id=ev.get("session_id") or None,
+            result=Path(result).expanduser(),
+            bus_home=bus_home,
+        )
+    return tasks
+
+
+def run_claude_agents(cfg: Config) -> List[dict]:
+    """Live state of every Claude session on this machine, from `claude agents --json`."""
+    proc = subprocess.run(
+        [cfg.claude_bin, "agents", "--json"],
+        capture_output=True, text=True, timeout=AGENTS_TIMEOUT_S, check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"`claude agents --json` exited {proc.returncode}: {proc.stderr.strip()[:300]}")
+    data = json.loads(proc.stdout or "[]")
+    if not isinstance(data, list):
+        raise RuntimeError("`claude agents --json` did not return a list")
+    return data
+
+
+def _mtime(path: Optional[Path]) -> Optional[float]:
+    if not path:
+        return None
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return None
+
+
+def _parse_iso(value) -> Optional[float]:
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def last_activity(cfg: Config, task: BusTask, job: dict) -> Optional[float]:
+    """The newest timestamp among everything the job touches. None when nothing can be read."""
+    stamps: List[float] = []
+    stamps.append(_mtime(task.result) or 0)
+    job_dir = cfg.jobs_dir / str(job.get("id") or task.bg_id)
+    stamps.append(_mtime(job_dir / "timeline.jsonl") or 0)
+    state_path = job_dir / "state.json"
+    stamps.append(_mtime(state_path) or 0)
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        state = {}
+    for key in ("updatedAt", "lastTerminalAt"):
+        ts = _parse_iso(state.get(key))
+        if ts:
+            stamps.append(ts)
+    transcript = state.get("linkScanPath")
+    if transcript:
+        stamps.append(_mtime(Path(transcript)) or 0)
+    in_flight = (state.get("inFlight") or {}) if isinstance(state, dict) else {}
+    if (in_flight.get("tasks") or 0) > 0 or (in_flight.get("queued") or 0) > 0:
+        return float("inf")  # something is still running inside the session
+    newest = max(stamps)
+    return newest if newest > 0 else None
+
+
+# ── decisions ─────────────────────────────────────────────────────────────
+
+
+@dataclass
+class Decision:
+    task: BusTask
+    short_id: str
+    action: str  # "stop" or "skip"
+    reason: str
+
+
+def decide(cfg: Config, tasks: Dict[str, BusTask], agents: List[dict], keep: set,
+           now: float) -> List[Decision]:
+    """Pure: which live bus jobs to stop, and why the rest are left alone."""
+    live: Dict[str, dict] = {}
+    for job in agents:
+        if not isinstance(job, dict) or not job.get("id"):
+            continue
+        live[str(job["id"])] = job
+
+    decisions: List[Decision] = []
+    for bg_id, task in sorted(tasks.items(), key=lambda kv: kv[1].task_id):
+        job = live.get(bg_id)
+        if job is None:
+            continue  # not a live job any more (already stopped, or gone): nothing to do
+        if not task.result.exists():
+            decisions.append(Decision(task, bg_id, "skip", "no result file yet"))
+            continue
+
+        def skip(reason: str) -> None:
+            decisions.append(Decision(task, bg_id, "skip", reason))
+
+        if job.get("kind") != "background":
+            skip(f"kind is {job.get('kind')!r}, not background")
+            continue
+        if not job.get("pid"):
+            skip("not live (no pid)")
+            continue
+        if task.session_id and job.get("sessionId") and job["sessionId"] != task.session_id:
+            skip("session id differs from the registry (short id reused?)")
+            continue
+        if task.name in keep or str(job.get("name") or "") in keep:
+            skip("listed in keep.txt")
+            continue
+        status, state = job.get("status"), job.get("state")
+        if status != "idle":
+            skip(f"status is {status!r}, not idle")
+            continue
+        if state != "done":
+            skip(f"state is {state!r}, not done")
+            continue
+        result_age = now - (_mtime(task.result) or now)
+        if result_age < cfg.min_age_s:
+            skip(f"result written {int(result_age // 60)} min ago")
+            continue
+        last = last_activity(cfg, task, job)
+        if last is None:
+            skip("could not read job activity")
+            continue
+        if last == float("inf"):
+            skip("work still in flight inside the session")
+            continue
+        quiet = now - last
+        if quiet < cfg.min_age_s:
+            skip(f"active {int(quiet // 60)} min ago")
+            continue
+        decisions.append(Decision(task, bg_id, "stop", f"idle and done, quiet for {int(quiet // 60)} min"))
+    return decisions
+
+
+# ── actions ───────────────────────────────────────────────────────────────
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def log_line(cfg: Config, text: str) -> None:
+    cfg.log_file.parent.mkdir(parents=True, exist_ok=True)
+    with cfg.log_file.open("a", encoding="utf-8") as fh:
+        fh.write(f"{_now_iso()} {text}\n")
+
+
+def stop_job(cfg: Config, short_id: str) -> subprocess.CompletedProcess:
+    return subprocess.run([cfg.claude_bin, "stop", short_id], capture_output=True, text=True,
+                          timeout=STOP_TIMEOUT_S, check=False)
+
+
+def reap(cfg: Config, agents_provider: Callable[[Config], List[dict]] = run_claude_agents,
+         stopper: Callable[[Config, str], subprocess.CompletedProcess] = stop_job,
+         now: Optional[float] = None, out=sys.stdout) -> int:
+    """One pass. Returns the number of jobs stopped (or that would be stopped in --dry-run)."""
+    now = now if now is not None else datetime.now(timezone.utc).timestamp()
+    keep = load_keep_names(cfg.keep_file)
+    tasks: Dict[str, BusTask] = {}
+    for home in cfg.bus_homes:
+        tasks.update(load_registry_tasks(home))
+    try:
+        agents = agents_provider(cfg)
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        log_line(cfg, f"ERROR claude agents --json failed: {exc}")
+        print(f"error: {exc}", file=sys.stderr)
+        return 0
+
+    decisions = decide(cfg, tasks, agents, keep, now)
+    stopped = 0
+    for d in decisions:
+        tag = f"task={d.task.task_id} name={d.task.name} short={d.short_id}"
+        if d.action == "skip":
+            if cfg.verbose or cfg.dry_run:
+                print(f"skip  {tag}: {d.reason}", file=out)
+            continue
+        if cfg.dry_run:
+            print(f"WOULD STOP {tag}: {d.reason}", file=out)
+            log_line(cfg, f"DRY-RUN would stop {tag} ({d.reason})")
+            stopped += 1
+            continue
+        try:
+            proc = stopper(cfg, d.short_id)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            log_line(cfg, f"ERROR stop {tag}: {exc}")
+            print(f"error stopping {tag}: {exc}", file=sys.stderr)
+            continue
+        if proc.returncode == 0:
+            stopped += 1
+            log_line(cfg, f"STOP {tag} ({d.reason})")
+            print(f"stopped {tag}: {d.reason}", file=out)
+        else:
+            err = (proc.stderr or proc.stdout or "").strip().splitlines()
+            detail = err[-1][:200] if err else f"exit {proc.returncode}"
+            log_line(cfg, f"ERROR stop {tag}: {detail}")
+            print(f"error stopping {tag}: {detail}", file=sys.stderr)
+
+    live_bus = sum(1 for d in decisions)
+    verb = "would stop" if cfg.dry_run else "stopped"
+    print(f"{verb} {stopped} of {live_bus} live bus job(s); {len(tasks)} bus task(s) in registries, "
+          f"{len(keep)} name(s) kept", file=out)
+    return stopped
+
+
+# ── install / uninstall ───────────────────────────────────────────────────
+
+
+def _launchctl(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["/bin/launchctl", *args], capture_output=True, text=True, check=False)
+
+
+def install(cfg: Config, repo_script: Path, plist_template: Path, out=sys.stdout) -> int:
+    home = Path.home()
+    uid = os.getuid()
+    link = home / ".local" / "bin" / "bus-session-reaper"
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if link.is_symlink() or link.exists():
+        link.unlink()
+    link.symlink_to(repo_script)
+    print(f"linked {link} -> {repo_script}", file=out)
+
+    if not cfg.keep_file.exists():
+        cfg.keep_file.parent.mkdir(parents=True, exist_ok=True)
+        cfg.keep_file.write_text(
+            "# bus-session-reaper: session names (one per line) that must never be stopped.\n"
+            + "".join(f"{n}\n" for n in DEFAULT_KEEP_NAMES), encoding="utf-8")
+        print(f"created {cfg.keep_file}", file=out)
+    else:
+        print(f"kept existing {cfg.keep_file}", file=out)
+
+    cfg.log_file.parent.mkdir(parents=True, exist_ok=True)
+    plist_text = (plist_template.read_text(encoding="utf-8")
+                  .replace("@HOME@", str(home))
+                  .replace("@SCRIPT@", str(link)))
+    agents_dir = home / "Library" / "LaunchAgents"
+    agents_dir.mkdir(parents=True, exist_ok=True)
+    plist = agents_dir / f"{LABEL}.plist"
+    plist.write_text(plist_text, encoding="utf-8")
+    print(f"wrote {plist}", file=out)
+
+    domain = f"gui/{uid}"
+    _launchctl("bootout", f"{domain}/{LABEL}")  # fine if it was not loaded
+    proc = _launchctl("bootstrap", domain, str(plist))
+    if proc.returncode != 0:
+        print(f"launchctl bootstrap failed: {proc.stderr.strip() or proc.stdout.strip()}", file=sys.stderr)
+        return 1
+    shown = _launchctl("print", f"{domain}/{LABEL}")
+    loaded = shown.returncode == 0
+    print(f"LaunchAgent {LABEL} {'loaded' if loaded else 'NOT loaded'} in {domain}", file=out)
+    for line in shown.stdout.splitlines():
+        if any(k in line for k in ("state =", "run interval", "program =", "last exit")):
+            print("  " + line.strip(), file=out)
+    return 0 if loaded else 1
+
+
+def uninstall(out=sys.stdout) -> int:
+    uid = os.getuid()
+    plist = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
+    _launchctl("bootout", f"gui/{uid}/{LABEL}")
+    if plist.exists():
+        plist.unlink()
+        print(f"removed {plist}", file=out)
+    print(f"LaunchAgent {LABEL} unloaded (symlink and keep.txt left in place)", file=out)
+    return 0
+
+
+# ── cli ───────────────────────────────────────────────────────────────────
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    ap = argparse.ArgumentParser(prog="bus-session-reaper", description=__doc__.split("\n\n")[0])
+    ap.add_argument("command", nargs="?", choices=["run", "install", "uninstall"], default="run")
+    ap.add_argument("--dry-run", action="store_true", help="print what would be stopped, stop nothing")
+    ap.add_argument("--verbose", "-v", action="store_true", help="also print every skipped live bus job")
+    ap.add_argument("--min-age", type=int, default=DEFAULT_MIN_AGE_MIN, metavar="MINUTES",
+                    help=f"result age and quiet time required before stopping (default {DEFAULT_MIN_AGE_MIN})")
+    args = ap.parse_args(argv)
+
+    cfg = Config(min_age_s=max(0, args.min_age) * 60, dry_run=args.dry_run, verbose=args.verbose)
+    if args.command == "install":
+        script = Path(__file__).resolve()
+        template = script.parent.parent / "launchd" / f"{LABEL}.plist.in"
+        if not template.exists():
+            print(f"plist template not found: {template}", file=sys.stderr)
+            return 1
+        return install(cfg, script, template)
+    if args.command == "uninstall":
+        return uninstall()
+    reap(cfg)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
