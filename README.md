@@ -155,6 +155,28 @@ Add personal aliases to:
 - Uses fallback prompt when Powerlevel10k unavailable
 - Minimal dependencies for fast setup
 
+## Mac mini tools
+
+### bus-session-reaper
+Archives finished [session-bus](https://github.com/MCheli/mac-mini-collector) sessions on the Mac mini so they don't pile up in the Claude app. Every 30 minutes a LaunchAgent runs `bin/bus-session-reaper`, which calls `claude stop <short-id>` (archive, transcript kept; the bus can still resume it) on each bus job that:
+
+- is recorded in a bus registry (`~/.session-bus-remote` or `~/.session-bus`) and has a written `.result.md`;
+- is live, idle and `done` in `claude agents --json` (never working, busy, blocked or waiting on a prompt);
+- has had its result for at least 60 minutes and shown no activity (job state, timeline, transcript) for 60 minutes;
+- is not named in `~/.config/bus-session-reaper/keep.txt`.
+
+Jobs that aren't bus tasks are never touched. It never runs `claude rm` or `claude purge`.
+
+```bash
+bus-session-reaper --dry-run          # show what would be stopped, and why the rest are skipped
+bus-session-reaper                    # one real pass (what the LaunchAgent runs)
+python3 -I bin/bus-session-reaper install    # symlink to ~/.local/bin, keep.txt, LaunchAgent in gui/$UID
+python3 -I bin/bus-session-reaper uninstall  # unload and remove the LaunchAgent
+python3 -m unittest tests/test_bus_session_reaper.py
+```
+
+To keep a session from being reaped, add its name (one per line) to `~/.config/bus-session-reaper/keep.txt`. Actions are logged to `~/Library/Logs/bus-session-reaper.log`; launchd output goes to `~/Library/Logs/bus-session-reaper.launchd.log`. The plist template lives in `launchd/`.
+
 ## Maintenance
 
 ### Update Everything
@@ -178,6 +200,9 @@ git pull
 
 ```
 dotfiles/
+├── bin/             # Tools installed to ~/.local/bin (bus-session-reaper)
+├── launchd/         # LaunchAgent templates for the Mac mini
+├── tests/           # Unit tests (python3 -m unittest tests/...)
 ├── scripts/          # Installation and maintenance scripts
 ├── shell/           # Shared shell configuration (bash + zsh)
 │   ├── aliases.sh   # Common aliases for both shells

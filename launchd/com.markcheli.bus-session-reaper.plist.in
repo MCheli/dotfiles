@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template: `bus-session-reaper install` fills in @HOME@ and @SCRIPT@ and installs it as
+     ~/Library/LaunchAgents/com.markcheli.bus-session-reaper.plist, then bootstraps it into gui/$UID.
+     Every 30 minutes it archives (claude stop) finished session-bus sessions that have been idle
+     for an hour. See bin/bus-session-reaper for the exact rules. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.markcheli.bus-session-reaper</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>-I</string>
+    <string>@SCRIPT@</string>
+  </array>
+  <!-- A LaunchAgent in Mark's login session, so `claude` sees his sign-in and the background daemon. -->
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>1800</integer>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOME</key><string>@HOME@</string>
+    <key>LANG</key><string>en_US.UTF-8</string>
+    <key>CLAUDE_BIN</key><string>/opt/homebrew/bin/claude</string>
+  </dict>
+  <key>WorkingDirectory</key><string>@HOME@</string>
+  <key>StandardOutPath</key><string>@HOME@/Library/Logs/bus-session-reaper.launchd.log</string>
+  <key>StandardErrorPath</key><string>@HOME@/Library/Logs/bus-session-reaper.launchd.log</string>
+  <key>ProcessType</key><string>Background</string>
+  <key>Nice</key><integer>5</integer>
+  <key>ExitTimeOut</key><integer>300</integer>
+</dict>
+</plist>
